@@ -1,0 +1,66 @@
+:root {
+  --lightgrey: #efeaec;
+  --grey: #9ea3b0;
+  --softblue: #586ba4;
+  --darkblue: #324376;
+  --yellow: #f5dd90;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  margin: 0;
+  padding: 0;
+  font-family: monospace;
+  font-size: 150%;
+}
+body {
+  width: 1050px;
+  padding: 40px 20px;
+  margin: auto;
+}
+a {
+  cursor: pointer;
+  color: var(--darkblue);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+textarea {
+  background: transparent;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  width: 100%;
+}
+input,
+textarea {
+  padding: 9px;
+  border: 1px solid;
+  background: #fff;
+}
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.toastify { max-width: 100%; }
+.toastify pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.toast-info { background: #726edb !important; }
+.toast-warning { background: #cfdb6e !important; }
+.toast-error { background: #db6e6e!important; }
+.toast-success { background: #6edb91!important; }
+
+.djt-Content { text-align: left; }
+.djt-Property_Key,
+.djt-Property_Type {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+}

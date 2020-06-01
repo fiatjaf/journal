@@ -1,0 +1,24 @@
+<!-- @format -->
+
+<script>
+  var lastlogs = []
+  var editingIndex = null
+  var editing = {}
+
+  async function saveEdit(e) {
+    e.preventDefault()
+
+    editingIndex = null
+    editing = {}
+  }
+</script>
+
+<div>
+  {#if editingIndex !== null}
+  <div class="logs"></div>
+  <EditLog bind:value="{editing}" />
+  <div class="logs"></div>
+  {:else}
+  <div class="logs"></div>
+  {/if}
+</div>

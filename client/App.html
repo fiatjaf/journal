@@ -1,0 +1,61 @@
+<!-- @format -->
+
+<script>
+  import {onMount, setContext} from 'svelte'
+  import Router, {link} from 'svelte-spa-router'
+
+  import Logs from './Logs.html'
+  import State from './State.html'
+  import Docs from './Docs.html'
+  import NotFound from './NotFound.html'
+
+  onMount(async () => {
+    try {
+      let metadata = await (await fetch('/~/metadata')).json()
+      setContext('metadata', metadata)
+    } catch (err) {
+      toast.error('failed to fetch metadata: ' + err.message)
+    }
+  })
+
+  const routes = {
+    '/': Logs,
+    '/state': State,
+    '/docs': Docs,
+    '*': NotFound
+  }
+</script>
+
+<style>
+  nav {
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  nav > * {
+    margin: 0 14px;
+  }
+  nav a:hover {
+    padding: 3px 6px;
+  }
+  nav img {
+    height: 3rem;
+  }
+  nav a {
+    color: inherit;
+  }
+  .account {
+    text-transform: lowercase;
+  }
+  main {
+    margin: 23px auto;
+  }
+</style>
+
+<nav>
+  <a href="#/">Logs</a>
+  <a href="#/state">State</a>
+  <a href="#/docs">docs</a>
+</nav>
+<main><Router {routes} /></main>

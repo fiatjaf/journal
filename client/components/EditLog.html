@@ -1,0 +1,39 @@
+<!-- @format -->
+
+<script>
+  import {getContext} from 'svelte'
+
+  export var value = {
+    method: '',
+    args: {}
+  }
+
+  let {methods} = getContext('metadata')
+
+  function setArgValue(e) {
+    value.args[e.target.dataset.arg] = e.target.value
+  }
+</script>
+
+<style>
+  #edit {
+  }
+</style>
+
+<form id="edit" on:submit="{saveEdit}">
+  <select bind:value="{value.method}">
+    {#each Object.keys(methods) as methodName}
+    <option>{methodName}</option>
+    {/each}
+  </select>
+  {#if methods[value.method]} {#each methods[value.method] as arg}
+  <label>
+    {arg}:
+    <input
+      value="{value.args[arg]}"
+      data-arg="{arg}"
+      on:input="{setArgValue}"
+    />
+  </label>
+  {/each} {/if}
+</form>

@@ -1,0 +1,5 @@
+bindata.go
+journal
+journal.db
+bundle.*
+node_modules
