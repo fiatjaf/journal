@@ -12,15 +12,12 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rs/zerolog"
 	"go.etcd.io/bbolt"
-	"gopkg.in/antage/eventsource.v1"
 )
 
 var s Settings
 var db *bbolt.DB
-var es eventsource.EventSource = stateStream()
 var err error
 var log = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
-var cfile []byte
 var router = mux.NewRouter()
 var state interface{}
 
@@ -71,10 +68,12 @@ func main() {
 
 	// api routes
 	router.Path("/~/metadata").Methods("GET").HandlerFunc(getMetadata)
-	router.Path("/~/entry").Methods("POST").HandlerFunc(newEntry)
+	router.Path("/~/entries").Methods("GET").HandlerFunc(listEntries)
 	router.Path("/~/entry/{id}").Methods("PUT").HandlerFunc(setEntry)
 	router.Path("/~/entry/{id}").Methods("DELETE").HandlerFunc(delEntry)
-	router.Path("/~~~/state").Methods("GET").Handler(es)
+	router.Path("/~/state").Methods("GET", "POST").HandlerFunc(queryState)
+	router.Path("/~/state/{jq}").Methods("GET").HandlerFunc(queryState)
+	router.Path("/~~~/state").Methods("GET").HandlerFunc(serveStream)
 
 	// js client
 	http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "/static/"}))

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/itchyny/gojq"
-	"github.com/kr/pretty"
 	"go.etcd.io/bbolt"
 )
 
@@ -23,7 +22,7 @@ func (*moduleLoader) LoadModule(_ string) (*gojq.Module, error) {
 
 func prepareComputation() {
 	// read computation file as a module
-	cfile, err = ioutil.ReadFile(COMPUTE_FILE)
+	cfile, err := ioutil.ReadFile(COMPUTE_FILE)
 	if err != nil {
 		log.Fatal().Err(err).Str("path", COMPUTE_FILE).
 			Msg("couldn't open compuation file")
@@ -52,14 +51,11 @@ func prepareComputation() {
 		}
 
 		p, _ := gojq.Parse(`import "compute" as m; m::` + funcdef.Name + argsStr)
-
 		code, err := gojq.Compile(p,
 			gojq.WithModuleLoader(loader),
 			gojq.WithVariables(vars),
 		)
 		if err != nil {
-			pretty.Log(`import "compute" as m; m::` + funcdef.Name + argsStr)
-			pretty.Log(vars)
 			log.Fatal().Err(err).Str("func", funcdef.Name).Msg("failed to compile")
 		}
 		methodsCallable[funcdef.Name] = code
@@ -69,14 +65,30 @@ func prepareComputation() {
 func compute(
 	state interface{},
 	method string,
-	args []interface{},
-) interface{} {
-	v, _ := methodsCallable[method].Run(state, args...).Next()
-	return v
+	params []interface{},
+) (interface{}, error) {
+	log := log.With().
+		Interface("state", state).Str("method", method).Interface("params", params).
+		Logger()
+
+	code, ok := methodsCallable[method]
+	if ok {
+		state, _ = code.Run(state, params...).Next()
+		if err, isErr := state.(error); isErr {
+			log.Warn().Err(err).Msg("compute error")
+			return nil, err
+		}
+	}
+
+	log.Debug().Interface("after", state).Msg("compute success")
+	return state, nil
 }
 
 func computeAll() (state interface{}, err error) {
-	state = compute(make(map[string]interface{}), "init", []interface{}{})
+	state, err = compute(make(map[string]interface{}), "init", []interface{}{})
+	if err != nil {
+		return nil, err
+	}
 
 	err = db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("logs"))
@@ -87,14 +99,15 @@ func computeAll() (state interface{}, err error) {
 				return err
 			}
 
+			value.Params["date"] = value.Time
 			params := make([]interface{}, len(value.Params))
-			params[0] = value.Time.String()
+
 			for i, argName := range methodsAvailable[value.Method] {
-				params[1+i] = value.Params[argName]
+				params[i] = value.Params[argName]
 			}
 
-			state = compute(state, value.Method, params)
-			return nil
+			state, err = compute(state, value.Method, params)
+			return err
 		})
 	})
 
