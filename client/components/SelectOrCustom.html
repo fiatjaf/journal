@@ -1,0 +1,28 @@
+<script>
+  import AutosizeInput from './AutosizeInput.html'
+
+  export let options
+  export let value
+
+  let showSelect = options.indexOf(value) !== -1
+  $: {
+    if (value === '') {
+      if (showSelect) {
+        showSelect = false
+      } else {
+        showSelect = true
+      }
+    }
+  }
+</script>
+
+{#if showSelect}
+<select bind:value="{value}">
+  {#each options as opt}
+  <option>{opt}</option>
+  {/each}
+  <option value="">...</option>
+</select>
+{:else}
+<AutosizeInput bind:value="{value}" />
+{/if}

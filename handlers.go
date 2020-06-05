@@ -14,12 +14,16 @@ import (
 func getMetadata(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(struct {
-		Methods map[string][]string `json:"methods"`
-	}{methodsAvailable})
+		Characters string              `json:"characters"`
+		Methods    map[string][]string `json:"methods"`
+	}{
+		"$&+-.0123456789:=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~",
+		methodsAvailable,
+	})
 }
 
 func listEntries(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/x-ndjson")
 
 	err = db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte("logs"))

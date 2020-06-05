@@ -19,6 +19,7 @@ var db *bbolt.DB
 var err error
 var log = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr})
 var router = mux.NewRouter()
+var httpPublic = &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: ""}
 var state interface{}
 
 type Settings struct {
@@ -75,8 +76,9 @@ func main() {
 	router.Path("/~/state/{jq}").Methods("GET").HandlerFunc(queryState)
 	router.Path("/~~~/state").Methods("GET").HandlerFunc(serveStream)
 
-	// js client
-	http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "/static/"}))
+	// client
+	router.PathPrefix("/static/").Methods("GET").Handler(http.FileServer(httpPublic))
+	router.PathPrefix("/").Methods("GET").HandlerFunc(serveClient)
 
 	// start the server
 	log.Info().Str("host", s.Host).Str("port", s.Port).Msg("listening")
@@ -90,4 +92,16 @@ func main() {
 	if err != nil {
 		log.Error().Err(err).Msg("error serving http")
 	}
+}
+
+func serveClient(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	indexf, err := httpPublic.Open("static/index.html")
+	if err != nil {
+		log.Error().Err(err).Str("file", "static/index.html").Msg("make sure you generated bindata.go without -debug")
+		return
+	}
+	fstat, _ := indexf.Stat()
+	http.ServeContent(w, r, "static/index.html", fstat.ModTime(), indexf)
+	return
 }

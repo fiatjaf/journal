@@ -1,2 +1,15 @@
-State:
+<script>
+  import Json from './components/Json.html'
+  import {state} from './stores'
+</script>
 
+<style>
+  div {
+    margin: 0 30px;
+  }
+</style>
+
+<div>
+  State:
+  <Json value="{$state}" />
+</div>

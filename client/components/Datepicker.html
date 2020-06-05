@@ -1,0 +1,35 @@
+<script>
+  import Pikaday from 'pikaday'
+  import {onMount} from 'svelte'
+
+  var el
+
+  export let value = new Date()
+
+  onMount(() => {
+    let picker = new Pikaday({
+      field: el,
+      onSelect: () => {
+        value = picker.getDate()
+      },
+      defaultDate: value,
+      enableSelectionDaysInNextAndPreviousMonths: true
+    })
+
+    return () => {
+      picker.destroy()
+    }
+  })
+</script>
+
+<style>
+  input {
+    width: 100px;
+  }
+</style>
+
+<input
+  type="text"
+  bind:this="{el}"
+  value="{value.toISOString().split('T')[0]}"
+/>

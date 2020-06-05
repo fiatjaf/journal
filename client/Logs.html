@@ -1,24 +1,62 @@
 <!-- @format -->
 
 <script>
-  var lastlogs = []
-  var editingIndex = null
-  var editing = {}
+  import Mousetrap from 'mousetrap'
+  import {onMount} from 'svelte'
 
-  async function saveEdit(e) {
-    e.preventDefault()
+  import Log from './components/Log.html'
+  import {entries} from './stores'
+  import {entryId} from './helpers'
 
-    editingIndex = null
-    editing = {}
+  var selected = -1
+
+  onMount(() => {
+    Mousetrap.bind(['ctrl+up', 'command+up'], () => {
+      selected--
+      if (selected < -1) selected = -1
+    })
+    Mousetrap.bind(['ctrl+down', 'command+down'], () => {
+      selected++
+      if (selected > $entries.length - 1) selected = $entries.length - 1
+    })
+    Mousetrap.bind('del', () => {
+      if (selected >= 0) {
+        deleteEntry(selected)
+      }
+    })
+    Mousetrap.bind(['ctr+shift+up', 'command+shift+up'], () => {
+      moveSelectedUp()
+    })
+    Mousetrap.bind(['ctr+shift+down', 'command+shift+down'], () => {
+      moveSelectedDown()
+    })
+  })
+
+  async function deleteEntry(index) {
+    let entry = $entries[index]
+    let r = await fetch(`/~/entry/${entryId(entry)}`, {method: 'delete'})
+    if (r.ok) {
+      entries.update(entries => {
+        entries.splice(index, 1)
+        return entries
+      })
+    }
+  }
+
+  function moveSelectedDown() {}
+  function moveSelectedUp() {}
+
+  function newLogEntry(e) {
+    let entry = e.detail
+    console.log('new log entry', entry)
   }
 </script>
 
 <div>
-  {#if editingIndex !== null}
-  <div class="logs"></div>
-  <EditLog bind:value="{editing}" />
-  <div class="logs"></div>
-  {:else}
-  <div class="logs"></div>
-  {/if}
+  <Log on:saved="{newLogEntry}" selected="{selected === -1}" />
+  <div class="logs">
+    {#each $entries as entry, i (entry.time.toISOString() + '~' + entry.pos)}
+    <Log bind:value="{entry}" selected="{selected === i}" />
+    {/each}
+  </div>
 </div>

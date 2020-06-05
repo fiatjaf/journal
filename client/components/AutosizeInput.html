@@ -1,0 +1,14 @@
+<script>
+  import {onMount} from 'svelte'
+  import autoSizeInput from 'autosize-input'
+
+  export let value = ''
+
+  var el
+
+  onMount(() => {
+    return autoSizeInput(el)
+  })
+</script>
+
+<input bind:this="{el}" bind:value="{value}" type="text" on:input />

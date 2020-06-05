@@ -1,11 +1,11 @@
 /** @format */
 
-import shim from 'rollup-plugin-shim'
-import json from 'rollup-plugin-json'
+import json from '@rollup/plugin-json'
 import svelte from 'rollup-plugin-svelte'
-import resolve from 'rollup-plugin-node-resolve'
-import commonjs from 'rollup-plugin-commonjs'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 import {terser} from 'rollup-plugin-terser'
+import hypothetical from 'rollup-plugin-hypothetical'
 
 const production = !!process.env.PRODUCTION
 
@@ -20,10 +20,6 @@ export default {
   plugins: [
     json(),
 
-    shim({
-      fengari: 'export default window.fengari'
-    }),
-
     svelte({
       // enable run-time checks when not in production
       dev: !production,
@@ -32,6 +28,13 @@ export default {
       css: css => {
         css.write('static/bundle.css')
       }
+    }),
+
+    hypothetical({
+      allowFallthrough: true,
+      allowExternalFallthrough: true,
+      allowRelativeExternalFallthrough: true,
+      files: {moment: 'export default {}'}
     }),
 
     // If you have external dependencies installed from

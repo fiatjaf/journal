@@ -60,6 +60,8 @@ func prepareComputation() {
 		}
 		methodsCallable[funcdef.Name] = code
 	}
+
+	delete(methodsAvailable, "init")
 }
 
 func compute(

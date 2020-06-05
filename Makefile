@@ -1,5 +1,9 @@
 all: journal
 
+dev: $(shell find . -name "*.go")
+	go-bindata -debug -o bindata.go static/...
+	go build -ldflags="-s -w" -o ./journal
+
 journal: $(shell find . -name "*.go") bindata.go
 	go build -ldflags="-s -w" -o ./journal
 

@@ -8,17 +8,16 @@
 
 * {
   box-sizing: border-box;
+  font-family: monospace;
 }
 html {
-  margin: 0;
+  margin: 50px 0;
   padding: 0;
-  font-family: monospace;
-  font-size: 150%;
 }
 body {
-  width: 1050px;
-  padding: 40px 20px;
+  width: 100%;
   margin: auto;
+  font-size: 1.1em;
 }
 a {
   cursor: pointer;
@@ -36,9 +35,7 @@ textarea {
 }
 input,
 textarea {
-  padding: 9px;
-  border: 1px solid;
-  background: #fff;
+  min-width: 30px !important;
 }
 .center {
   display: flex;
