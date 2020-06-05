@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"go.etcd.io/bbolt"
@@ -40,6 +39,31 @@ func listEntries(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func batchEntryOps(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// decode
+	var actions []BatchAction
+	err := json.NewDecoder(r.Body).Decode(&actions)
+	defer r.Body.Close()
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{"decode", err})
+		return
+	}
+
+	errorType, err := save(actions)
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{errorType, err})
+		return
+	}
+
+	go notifyStateUpdated()
+
+	w.WriteHeader(200)
+}
+
 func setEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -53,30 +77,15 @@ func setEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// time is given in the id
-	id := mux.Vars(r)["id"]
-	spl := strings.Split(id, "~") // id = <2006-01-02T15:04:05>~<pos-string>
-	_, err = time.Parse(DATEFORMAT, spl[0])
-	if err != nil {
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(ErrorResponse{"time", err})
-		return
-	}
-	entry.Time = spl[0]
-	entry.Pos = spl[1]
-
-	// validate?
-	// ~
-
-	// save
-	err = db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte("logs"))
-		v, _ := json.Marshal(entry)
-		return bucket.Put([]byte(id), v)
+	errorType, err := save([]BatchAction{
+		{
+			Id:  mux.Vars(r)["id"],
+			Set: &entry,
+		},
 	})
 	if err != nil {
-		w.WriteHeader(500)
-		json.NewEncoder(w).Encode(ErrorResponse{"db-put", err})
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{errorType, err})
 		return
 	}
 
@@ -87,15 +96,16 @@ func setEntry(w http.ResponseWriter, r *http.Request) {
 
 func delEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	id := mux.Vars(r)["id"]
 
-	err = db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte("logs"))
-		return bucket.Delete([]byte(id))
+	errorType, err := save([]BatchAction{
+		{
+			Id:     mux.Vars(r)["id"],
+			Delete: true,
+		},
 	})
 	if err != nil {
-		json.NewEncoder(w).Encode(ErrorResponse{"db-delete", err})
-		w.WriteHeader(500)
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{errorType, err})
 		return
 	}
 

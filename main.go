@@ -70,7 +70,8 @@ func main() {
 	// api routes
 	router.Path("/~/metadata").Methods("GET").HandlerFunc(getMetadata)
 	router.Path("/~/entries").Methods("GET").HandlerFunc(listEntries)
-	router.Path("/~/entry/{id}").Methods("PUT").HandlerFunc(setEntry)
+	router.Path("/~/entries").Methods("PATCH").HandlerFunc(batchEntryOps)
+	router.Path("/~/entry/{id}").Methods("DELETE").HandlerFunc(delEntry)
 	router.Path("/~/entry/{id}").Methods("DELETE").HandlerFunc(delEntry)
 	router.Path("/~/state").Methods("GET", "POST").HandlerFunc(queryState)
 	router.Path("/~/state/{jq}").Methods("GET").HandlerFunc(queryState)
