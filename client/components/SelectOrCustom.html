@@ -3,6 +3,7 @@
 
   export let options
   export let value
+  export let disabled = false
 
   let showSelect = options.indexOf(value) !== -1
   $: {
@@ -17,12 +18,12 @@
 </script>
 
 {#if showSelect}
-<select bind:value="{value}">
+<select bind:value="{value}" disabled="{disabled}">
   {#each options as opt}
   <option>{opt}</option>
   {/each}
   <option value="">...</option>
 </select>
 {:else}
-<AutosizeInput bind:value="{value}" />
+<AutosizeInput bind:value="{value}" disabled="{disabled}" />
 {/if}

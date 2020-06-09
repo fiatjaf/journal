@@ -3,6 +3,7 @@
   import autoSizeInput from 'autosize-input'
 
   export let value = ''
+  export let disabled = false
 
   var el
 
@@ -11,4 +12,10 @@
   })
 </script>
 
-<input bind:this="{el}" bind:value="{value}" type="text" on:input />
+<input
+  bind:this="{el}"
+  bind:value="{value}"
+  type="text"
+  on:input
+  disabled="{disabled}"
+/>

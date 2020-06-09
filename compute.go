@@ -101,11 +101,17 @@ func computeAll() (state interface{}, err error) {
 				return err
 			}
 
+			method, ok := methodsAvailable[value.Method]
+			if !ok {
+				return nil
+			}
+
 			value.Params["date"] = value.Time
-			params := make([]interface{}, len(value.Params))
+			params := make([]interface{}, len(method))
 
 			for i, argName := range methodsAvailable[value.Method] {
-				params[i] = value.Params[argName]
+				v, _ := value.Params[argName]
+				params[i] = v
 			}
 
 			state, err = compute(state, value.Method, params)

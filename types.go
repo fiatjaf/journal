@@ -30,6 +30,8 @@ func (le *LogEntry) ApplyId(id string) error {
 	return nil
 }
 
+func (le LogEntry) Id() string { return le.Time + "~" + le.Pos }
+
 func (le *LogEntry) Validate() error {
 	return nil
 }

@@ -5,6 +5,7 @@
   var el
 
   export let value = new Date()
+  export let disabled = false
 
   onMount(() => {
     let picker = new Pikaday({
@@ -32,4 +33,5 @@
   type="text"
   bind:this="{el}"
   value="{value.toISOString().split('T')[0]}"
+  disabled="{disabled}"
 />

@@ -7,27 +7,32 @@
   import Log from './components/Log.html'
   import {entries} from './stores'
   import {entryId} from './helpers'
+  import * as toast from './toast'
 
-  var selected = -1
+  var selected = null
+
+  entries.subscribe(entries => {
+    selected = entries.length
+  })
 
   onMount(() => {
     Mousetrap.bind(['ctrl+up', 'command+up'], () => {
       selected--
-      if (selected < -1) selected = -1
+      if (selected < 0) selected = 0
     })
     Mousetrap.bind(['ctrl+down', 'command+down'], () => {
       selected++
-      if (selected > $entries.length - 1) selected = $entries.length - 1
+      if (selected > $entries.length) selected = $entries.length
     })
     Mousetrap.bind('del', () => {
       if (selected >= 0) {
         deleteEntry(selected)
       }
     })
-    Mousetrap.bind(['ctr+shift+up', 'command+shift+up'], () => {
+    Mousetrap.bind(['ctrl+shift+up', 'command+shift+up'], () => {
       moveSelectedUp()
     })
-    Mousetrap.bind(['ctr+shift+down', 'command+shift+down'], () => {
+    Mousetrap.bind(['ctrl+shift+down', 'command+shift+down'], () => {
       moveSelectedDown()
     })
   })
@@ -40,23 +45,87 @@
         entries.splice(index, 1)
         return entries
       })
+      toast.info('Deleted.')
+    } else {
+      toast.error('Failed to delete.')
     }
   }
 
-  function moveSelectedDown() {}
-  function moveSelectedUp() {}
+  async function moveSelectedDown() {}
+  async function moveSelectedUp() {}
 
-  function newLogEntry(e) {
-    let entry = e.detail
-    console.log('new log entry', entry)
+  async function newLogEntry(e) {
+    let r = await fetch(`/~/entries`, {
+      method: 'post',
+      body: JSON.stringify(e.detail)
+    })
+
+    if (r.ok) {
+      toast.success('Saved.')
+
+      let newEntry = await r.json()
+      let newEntryId = entryId(newEntry)
+
+      entries.update(entries => {
+        for (let i = 0; i < entries.length; i++) {
+          let entry = entries[i]
+          if (entryId(entry) < newEntryId) {
+            continue
+          } else {
+            entries.splice(i - 1, 0, newEntry)
+            return entries
+          }
+        }
+
+        toast.error("Couldn't find a place to insert the new entry!")
+      })
+    } else {
+      toast.error('Failed to save.')
+    }
+  }
+
+  async function updatedLogEntry(e) {
+    let updatedEntry = e.detail
+    let updatedId = entryId(updatedEntry)
+
+    let r = await fetch(`/~/entry/${updatedId}`, {
+      method: 'put',
+      body: JSON.stringify(updatedEntry)
+    })
+    if (r.ok) {
+      toast.success('Saved.')
+      entries.update(entries => {
+        for (let i = 0; i < entries.length; i++) {
+          let entry = entries[i]
+          if (entryId(entry) === updatedId) {
+            entries[i] = updatedEntry
+            return entries
+          }
+        }
+
+        toast.error("Updated entry doesn't exist.")
+        return entries
+      })
+    } else {
+      toast.error('Failed to save.')
+    }
   }
 </script>
 
 <div>
-  <Log on:saved="{newLogEntry}" selected="{selected === -1}" />
   <div class="logs">
     {#each $entries as entry, i (entry.time.toISOString() + '~' + entry.pos)}
-    <Log bind:value="{entry}" selected="{selected === i}" />
+    <Log
+      on:click="{() => selected = i}"
+      bind:value="{entry}"
+      on:saved="{updatedLogEntry}"
+      selected="{selected === i}"
+    />
     {/each}
+    <Log
+      on:saved="{newLogEntry}"
+      selected="{selected === $entries.length}"
+      on:click="{() => selected = $entries.length}"
+    />
   </div>
 </div>

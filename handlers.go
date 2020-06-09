@@ -16,7 +16,7 @@ func getMetadata(w http.ResponseWriter, r *http.Request) {
 		Characters string              `json:"characters"`
 		Methods    map[string][]string `json:"methods"`
 	}{
-		"$&+-.0123456789:=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~",
+		CHARACTERS,
 		methodsAvailable,
 	})
 }
@@ -64,6 +64,66 @@ func batchEntryOps(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
+func newEntry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// decode
+	var entry LogEntry
+	err := json.NewDecoder(r.Body).Decode(&entry)
+	defer r.Body.Close()
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{"decode", err})
+		return
+	}
+
+	// pos will be "", we will set it so this entry goes to the last pos in this date
+	err = db.View(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte("logs"))
+		c := bucket.Cursor()
+		k, _ := c.Seek([]byte(entry.Time))
+		if k == nil || string(k) != entry.Time {
+			// first at this date
+			entry.Pos = CHARACTERS[0:1]
+		} else {
+			for {
+				nextk, _ := c.Next()
+				if nextk != nil || strings.Split(string(nextk), "~")[0] != entry.Time {
+					// we reached the next date after the one we're in
+					pos := strings.Split(string(k), "~")[1]
+					entry.Pos = nextPos(pos)
+				}
+				k = nextk
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		json.NewEncoder(w).Encode(ErrorResponse{"db-list", err})
+		w.WriteHeader(500)
+		return
+	}
+
+	// save
+	errorType, err := save([]BatchAction{
+		{
+			Id:  entry.Id(),
+			Set: &entry,
+		},
+	})
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(ErrorResponse{errorType, err})
+		return
+	}
+
+	go notifyStateUpdated()
+
+	w.WriteHeader(200)
+}
+
 func setEntry(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -91,7 +151,8 @@ func setEntry(w http.ResponseWriter, r *http.Request) {
 
 	go notifyStateUpdated()
 
-	w.WriteHeader(200)
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(entry)
 }
 
 func delEntry(w http.ResponseWriter, r *http.Request) {
