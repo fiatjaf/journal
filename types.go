@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 )
@@ -32,7 +33,11 @@ func (le *LogEntry) ApplyId(id string) error {
 
 func (le LogEntry) Id() string { return le.Time + "~" + le.Pos }
 
-func (le *LogEntry) Validate() error {
+func (le LogEntry) Validate() error {
+	if le.Method == "" {
+		return errors.New("no method")
+	}
+
 	return nil
 }
 

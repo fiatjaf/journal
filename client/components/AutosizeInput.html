@@ -1,5 +1,5 @@
 <script>
-  import {onMount} from 'svelte'
+  import {onMount, afterUpdate} from 'svelte'
   import autoSizeInput from 'autosize-input'
 
   export let value = ''
@@ -9,6 +9,10 @@
 
   onMount(() => {
     return autoSizeInput(el)
+  })
+
+  afterUpdate(() => {
+    el.dispatchEvent(new Event('input'))
   })
 </script>
 

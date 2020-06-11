@@ -2,9 +2,11 @@
   import Pikaday from 'pikaday'
   import {onMount} from 'svelte'
 
+  import {today} from '../helpers'
+
   var el
 
-  export let value = new Date()
+  export let value = today()
   export let disabled = false
 
   onMount(() => {

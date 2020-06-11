@@ -11,8 +11,15 @@
 
   var selected = null
 
-  entries.subscribe(entries => {
-    selected = entries.length
+  onMount(() => {
+    var unsub
+    unsub = entries.subscribe(entries => {
+      selected = entries.length
+      if (selected > 0) {
+        unsub()
+      }
+    })
+    return unsub
   })
 
   onMount(() => {
@@ -35,6 +42,14 @@
     Mousetrap.bind(['ctrl+shift+down', 'command+shift+down'], () => {
       moveSelectedDown()
     })
+
+    return () => {
+      Mousetrap.unbind(['ctrl+up', 'command+up'])
+      Mousetrap.unbind(['ctrl+down', 'command+down'])
+      Mousetrap.unbind(['ctrl+shift+down', 'command+shift+down'])
+      Mousetrap.unbind(['ctrl+shift+up', 'command+shift+up'])
+      Mousetrap.unbind('del')
+    }
   })
 
   async function deleteEntry(index) {
@@ -125,7 +140,7 @@
     <Log
       on:saved="{newLogEntry}"
       selected="{selected === $entries.length}"
-      on:click="{() => selected = $entries.length}"
+      on:click="{e => { e.preventDefault; selected = $entries.length }}"
     />
   </div>
 </div>

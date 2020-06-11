@@ -4,7 +4,7 @@
   import {onMount, createEventDispatcher} from 'svelte'
 
   import {entries} from '../stores'
-  import {parseDate, formatDate} from '../helpers'
+  import {today, parseDate, formatDate, entryId} from '../helpers'
   import Datepicker from './Datepicker.html'
   import AutosizeInput from './AutosizeInput.html'
   import SelectOrCustom from './SelectOrCustom.html'
@@ -14,7 +14,7 @@
   const dispatch = createEventDispatcher()
 
   export var value = {
-    time: new Date(),
+    time: today(),
     pos: metadata.characters[0],
     method: '',
     params: {}
@@ -27,6 +27,7 @@
     initial =
       value.time.toISOString() + value.method + JSON.stringify(value.params)
   })
+
   $: modified =
     initial !==
     value.time.toISOString() + value.method + JSON.stringify(value.params)
@@ -42,6 +43,7 @@
         .map(name => ({name, editable: true}))
     )
     .concat({name: '', editable: true})
+  $: console.log(entryId(value), params)
 
   function paramNameChangeHandler(prevName) {
     return e => {
@@ -59,17 +61,17 @@
 </script>
 
 <style>
-  form {
+  .entry {
     padding: 0.4em 30px 0.3em;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-start;
   }
-  form.selected {
+  .entry.selected {
     background-color: rgb(84, 116, 151, 0.5);
   }
-  form > :global(*) {
+  .entry > :global(*) {
     margin: 0 5px;
   }
   label {
@@ -78,23 +80,30 @@
   }
 </style>
 
-<form id="edit" on:submit="{saveEdit}" class:selected on:click>
-  <button type="submit" disabled="{!selected || !modified}">Save</button>
-  <Datepicker bind:value="{value.time}" disabled="{!selected}" />
+<div class="entry" class:selected on:click>
+  {#if selected}
+  <Datepicker bind:value="{value.time}" />
   <SelectOrCustom
     bind:value="{value.method}"
     options="{Object.keys(metadata.methods)}"
-    disabled="{!selected}"
   />
-  {#if params.length} {#each params as param, i (i)}
+  <button on:click="{saveEdit}" disabled="{!modified}">Save</button>
+  {#each params as param, i (i)}
   <label>
     {#if param.editable}<AutosizeInput
+      bind:value="{param.name}"
       on:input="{paramNameChangeHandler(param.name)}"
-      disabled="{!selected}"
     />{:else}{param.name}{/if}:<AutosizeInput
       bind:value="{value.params[param.name]}"
-      disabled="{!selected}"
     />
   </label>
-  {/each} {/if}
-</form>
+  {/each} {:else if value.method == ""}
+  <button on:click>New Entry</button>
+  {:else}
+  <span on:click>
+    {value.time.toISOString().split('T')[0]} {value.method}{#each params as
+    param}{#if
+    value.params[param.name]}&nbsp;{param.name}={value.params[param.name]}{/if}{/each}
+  </span>
+  {/if}
+</div>

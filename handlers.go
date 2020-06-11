@@ -92,6 +92,7 @@ func newEntry(w http.ResponseWriter, r *http.Request) {
 					// we reached the next date after the one we're in
 					pos := strings.Split(string(k), "~")[1]
 					entry.Pos = nextPos(pos)
+					return nil
 				}
 				k = nextk
 			}
@@ -122,6 +123,7 @@ func newEntry(w http.ResponseWriter, r *http.Request) {
 	go notifyStateUpdated()
 
 	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(entry)
 }
 
 func setEntry(w http.ResponseWriter, r *http.Request) {
