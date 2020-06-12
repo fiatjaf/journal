@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/itchyny/gojq"
-	"go.etcd.io/bbolt"
+	"github.com/tidwall/buntdb"
 )
 
 var computeModule *gojq.Module
@@ -64,7 +64,7 @@ func prepareComputation() {
 	delete(methodsAvailable, "init")
 }
 
-func compute(
+func Compute(
 	state interface{},
 	method string,
 	params []interface{},
@@ -86,24 +86,25 @@ func compute(
 	return state, nil
 }
 
-func computeAll() (state interface{}, err error) {
-	state, err = compute(make(map[string]interface{}), "init", []interface{}{})
+func ComputeAll() (state interface{}, err error) {
+	state, err = Compute(make(map[string]interface{}), "init", []interface{}{})
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte("logs"))
-		return bucket.ForEach(func(k, v []byte) error {
+	err = db.View(func(tx *buntdb.Tx) error {
+		var err error
+
+		tx.Ascend("datepos", func(_, v string) bool {
 			var value LogEntry
-			err := json.Unmarshal(v, &value)
+			err = json.Unmarshal([]byte(v), &value)
 			if err != nil {
 				return err
 			}
 
 			method, ok := methodsAvailable[value.Method]
 			if !ok {
-				return nil
+				return true
 			}
 
 			value.Params["date"] = value.Time
@@ -114,9 +115,11 @@ func computeAll() (state interface{}, err error) {
 				params[i] = v
 			}
 
-			state, err = compute(state, value.Method, params)
-			return err
+			state, err = Compute(state, value.Method, params)
+			return true
 		})
+
+		return err
 	})
 
 	return state, err

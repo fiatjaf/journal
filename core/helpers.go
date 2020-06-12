@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"context"
@@ -16,6 +16,10 @@ const (
 )
 
 func nextPos(pos string) string {
+	if pos == "" {
+		return CHARACTERS[0:1]
+	}
+
 	length := len(pos)
 	lastchar := pos[length-1 : length]
 	lastcharindex := strings.Index(CHARACTERS, lastchar)
